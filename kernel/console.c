@@ -190,3 +190,5 @@ consoleinit(void)
   devsw[CONSOLE].read = consoleread;
   devsw[CONSOLE].write = consolewrite;
 }
+
+#define MAX_HISTORY 16
