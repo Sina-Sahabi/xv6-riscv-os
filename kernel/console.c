@@ -193,9 +193,9 @@ consoleinit(void)
 
 struct {
 #define MAX_HISTORY 16
-  char bufferArr[MAX_HISTORY][INPUT_BUF_SIZE]; // holds the actual command strings -
-  uint lenghtsArr[MAX_HISTORY]; // holds the length of each command string
-  uint lastCommandIndex; // the index of the last command entered to history
-  uint numOfCommandsInMem; // number of history commands in mem
-  uint currentHistory; // holds the current history view
+  char bufferArr[MAX_HISTORY][INPUT_BUF_SIZE];  // holds the actual command strings -
+  uint lenghtsArr[MAX_HISTORY];                 // holds the length of each command string
+  uint lastCommandIndex;                        // the index of the last command entered to history
+  uint numOfCommandsInMem;                      // number of history commands in mem
+  uint currentHistory;                          // holds the current history view
 } historyBufferArray;
