@@ -140,7 +140,9 @@ save_history(void) {
   uint len = 0;
   for (int i = cons.r; i < cons.w - 1; i++)
     historyArr.bufferArr[ind][len++] = cons.buf[i % INPUT_BUF_SIZE];
+  historyArr.bufferArr[ind][len] = 0;
   historyArr.lensArr[ind] = len;
+  // if (strcmp())
   historyArr.numOfCmdsInMem++;
 }
 
