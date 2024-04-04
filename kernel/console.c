@@ -52,11 +52,10 @@ struct {
   uint e;  // Edit index
 } cons;
 
-struct {
+struct { // will be protected by cons.lock
 #define MAX_HISTORY 16
   char bufferArr[MAX_HISTORY][INPUT_BUF_SIZE];  // holds the actual command strings -
   uint lensArr[MAX_HISTORY];                    // holds the length of each command string
-  uint lastCmdInd;                              // the index of the last command entered to history
   uint numOfCmdsInMem;                          // number of history commands in mem
   uint currentHistory;                          // holds the current history view
 } historyArr;
@@ -137,11 +136,12 @@ consoleread(int user_dst, uint64 dst, int n)
 
 void
 save_history(void) {
-  // uint ind = (historyArr.lastCmdInd + 1) % MAX_HISTORY;
-  // uint len = 0;
-  // for (int i = cons.r; i <= )
-  // historyArr.lensArr[ind] = 0;
-  // hisArr.numOfCmdsInMem++;
+  uint ind = historyArr.numOfCmdsInMem % MAX_HISTORY;
+  uint len = 0;
+  for (int i = cons.r; i < cons.w - 1; i++)
+    historyArr.bufferArr[ind][len++] = cons.buf[i % INPUT_BUF_SIZE];
+  historyArr.lensArr[ind] = len;
+  historyArr.numOfCmdsInMem++;
 }
 
 int escape;
@@ -220,7 +220,6 @@ void
 consoleinit(void)
 {
   initlock(&cons.lock, "cons");
-  historyArr.lastCmdInd = -1;
 
   uartinit();
 
