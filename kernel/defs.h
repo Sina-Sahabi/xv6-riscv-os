@@ -21,6 +21,7 @@ void            bunpin(struct buf*);
 void            consoleinit(void);
 void            consoleintr(int);
 void            consputc(int);
+// int             nextHistory(stringData*);
 
 // exec.c
 int             exec(char*, char**);

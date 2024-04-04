@@ -53,7 +53,7 @@ struct {
 } cons;
 
 struct { // will be protected by cons.lock
-#define MAX_HISTORY 16
+#define MAX_HISTORY 17
   char bufferArr[MAX_HISTORY][INPUT_BUF_SIZE];  // holds the actual command strings -
   uint lensArr[MAX_HISTORY];                    // holds the length of each command string
   uint numOfCmdsInMem;                          // number of history commands in mem
@@ -138,11 +138,14 @@ void
 save_history(void) {
   uint ind = historyArr.numOfCmdsInMem % MAX_HISTORY;
   uint len = 0;
+  // consputc('\n');
   for (int i = cons.r; i < cons.w - 1; i++)
     historyArr.bufferArr[ind][len++] = cons.buf[i % INPUT_BUF_SIZE];
+    // consputc(cons.buf[i % INPUT_BUF_SIZE]), consputc(',');
+  // consputc('\n');
   historyArr.bufferArr[ind][len] = 0;
   historyArr.lensArr[ind] = len;
-  historyArr.numOfCmdsInMem++;
+  historyArr.currentHistory = historyArr.numOfCmdsInMem++;
 }
 
 int escape;
@@ -215,6 +218,47 @@ consoleintr(int c)
   }
   
   release(&cons.lock);
+}
+
+
+/**
+ * @brief
+ * return next command in history
+ * @returns
+ * len if ok
+ * -1 if end of history
+ */
+int
+nextHistory(stringData* result)
+{
+  if (!historyArr.currentHistory || historyArr.numOfCmdsInMem - historyArr.currentHistory >= MAX_HISTORY - 1)
+    return -1;
+
+  historyArr.currentHistory--;
+  result->length = historyArr.lensArr[historyArr.currentHistory];
+  strncpy(result->str, historyArr.bufferArr[historyArr.currentHistory], result->length);
+  return result->length;
+}
+
+
+// return histroy of commands
+uint64
+sys_histry(void)
+{
+  stringData *str;
+  stringData kstr;
+
+  argaddr(0, (uint64 *)&str);
+
+  acquire(&tickslock);
+  int res = nextHistory(&kstr);
+  release(&tickslock);
+  
+  struct proc *p = myproc();
+  if(res != -1 && copyout(p->pagetable, (uint64)str, (char*)&kstr, sizeof(kstr)) < 0)
+    return -1;
+  
+  return res;
 }
 
 void

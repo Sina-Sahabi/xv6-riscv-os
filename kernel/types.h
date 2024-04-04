@@ -8,3 +8,9 @@ typedef unsigned int  uint32;
 typedef unsigned long uint64;
 
 typedef uint64 pde_t;
+
+typedef struct {
+#define MAX_STR_DATA 128
+  char str [MAX_STR_DATA];
+  uint length;
+} stringData;
