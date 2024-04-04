@@ -144,8 +144,7 @@ save_history(void) {
   // hisArr.numOfCmdsInMem++;
 }
 
-int dbg [1000];
-int skip;
+int escape;
 
 //
 // the console input interrupt handler.
@@ -183,35 +182,27 @@ consoleintr(int c)
       // echo back to the user.
       consputc(c);
 
-      if (skip == 2 && (c == 'A' || c == 'B' || c == 'C' || c == 'D')) {
-        skip = 0;
+      if (c == '\033') { // esc
+        escape = 1;
         break;
       }
-
-      if (c == '\033') { // esc
-        skip = 1;
-        break;
-      } 
       
-      if (skip == 1 && c == '[') {
-        skip = 2;
+      if (escape == 1 && c == '[') {
+        escape = 2;
         break;
-      } else {
-        //?
+      } else { //?
+        escape = 0;
+      }
+
+      if (escape == 2 && (c == 'A' || c == 'B' || c == 'C' || c == 'D')) {
+        escape = 0;
+        break;
       }
 
       // store for consumption by consoleread().
-      dbg[cons.e % INPUT_BUF_SIZE] = c;
       cons.buf[cons.e++ % INPUT_BUF_SIZE] = c;
 
       if(c == '\n' || c == C('D') || cons.e-cons.r == INPUT_BUF_SIZE){
-        for (int i = cons.r; i < cons.e - 1; i++) consputc(cons.buf[i]), consputc(',');
-        consputc('*');
-        consputc('\n');
-        // for (int i = cons.r; i < cons.e - 1; i++) printf("%d,", dbg[i]);
-        // consputc('*');
-        // consputc('\n');
-
         // wake up consoleread() if a whole line (or end-of-file)
         // has arrived.
         cons.w = cons.e;
@@ -238,6 +229,3 @@ consoleinit(void)
   devsw[CONSOLE].read = consoleread;
   devsw[CONSOLE].write = consolewrite;
 }
-/*
-s i n a  D  C  A  B
-*/
