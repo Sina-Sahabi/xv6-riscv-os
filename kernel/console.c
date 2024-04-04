@@ -55,11 +55,11 @@ struct {
 struct {
 #define MAX_HISTORY 16
   char bufferArr[MAX_HISTORY][INPUT_BUF_SIZE];  // holds the actual command strings -
-  uint lenghtsArr[MAX_HISTORY];                 // holds the length of each command string
-  uint lastCommandIndex;                        // the index of the last command entered to history
-  uint numOfCommandsInMem;                      // number of history commands in mem
+  uint lensArr[MAX_HISTORY];                    // holds the length of each command string
+  uint lastCmdInd;                              // the index of the last command entered to history
+  uint numOfCmdsInMem;                          // number of history commands in mem
   uint currentHistory;                          // holds the current history view
-} historyBufferArray;
+} historyArr;
 
 //
 // user write()s to the console go here.
@@ -135,6 +135,18 @@ consoleread(int user_dst, uint64 dst, int n)
   return target - n;
 }
 
+void
+save_history(void) {
+  // uint ind = (historyArr.lastCmdInd + 1) % MAX_HISTORY;
+  // uint len = 0;
+  // for (int i = cons.r; i <= )
+  // historyArr.lensArr[ind] = 0;
+  // hisArr.numOfCmdsInMem++;
+}
+
+int dbg [1000];
+int skip;
+
 //
 // the console input interrupt handler.
 // uartintr() calls this for input character.
@@ -171,13 +183,39 @@ consoleintr(int c)
       // echo back to the user.
       consputc(c);
 
+      if (skip == 2 && (c == 'A' || c == 'B' || c == 'C' || c == 'D')) {
+        skip = 0;
+        break;
+      }
+
+      if (c == '\033') { // esc
+        skip = 1;
+        break;
+      } 
+      
+      if (skip == 1 && c == '[') {
+        skip = 2;
+        break;
+      } else {
+        //?
+      }
+
       // store for consumption by consoleread().
+      dbg[cons.e % INPUT_BUF_SIZE] = c;
       cons.buf[cons.e++ % INPUT_BUF_SIZE] = c;
 
       if(c == '\n' || c == C('D') || cons.e-cons.r == INPUT_BUF_SIZE){
+        for (int i = cons.r; i < cons.e - 1; i++) consputc(cons.buf[i]), consputc(',');
+        consputc('*');
+        consputc('\n');
+        // for (int i = cons.r; i < cons.e - 1; i++) printf("%d,", dbg[i]);
+        // consputc('*');
+        // consputc('\n');
+
         // wake up consoleread() if a whole line (or end-of-file)
         // has arrived.
         cons.w = cons.e;
+        save_history();
         wakeup(&cons.r);
       }
     }
@@ -191,6 +229,7 @@ void
 consoleinit(void)
 {
   initlock(&cons.lock, "cons");
+  historyArr.lastCmdInd = -1;
 
   uartinit();
 
@@ -199,3 +238,6 @@ consoleinit(void)
   devsw[CONSOLE].read = consoleread;
   devsw[CONSOLE].write = consolewrite;
 }
+/*
+s i n a  D  C  A  B
+*/
