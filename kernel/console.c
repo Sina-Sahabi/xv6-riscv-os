@@ -53,11 +53,10 @@ struct {
 } cons;
 
 struct { // will be protected by cons.lock
-#define MAX_HISTORY 17
-  char bufferArr[MAX_HISTORY][INPUT_BUF_SIZE];  // holds the actual command strings -
-  uint lensArr[MAX_HISTORY];                    // holds the length of each command string
-  uint numOfCmdsInMem;                          // number of history commands in mem
-  uint currentHistory;                          // holds the current history view
+#define MAX_HISTORY 4
+  stringData cmd [MAX_HISTORY];
+  uint numOfCmdsInMem;
+  uint currentHistory;
 } historyArr;
 
 //
@@ -138,13 +137,10 @@ void
 save_history(void) {
   uint ind = historyArr.numOfCmdsInMem % MAX_HISTORY;
   uint len = 0;
-  // consputc('\n');
   for (int i = cons.r; i < cons.w - 1; i++)
-    historyArr.bufferArr[ind][len++] = cons.buf[i % INPUT_BUF_SIZE];
-    // consputc(cons.buf[i % INPUT_BUF_SIZE]), consputc(',');
-  // consputc('\n');
-  historyArr.bufferArr[ind][len] = 0;
-  historyArr.lensArr[ind] = len;
+    historyArr.cmd[ind].str[len++] = cons.buf[i % INPUT_BUF_SIZE];
+  historyArr.cmd[ind].str[len] = '\0';
+  historyArr.cmd[ind].length = len;
   historyArr.currentHistory = historyArr.numOfCmdsInMem++;
 }
 
@@ -231,12 +227,12 @@ consoleintr(int c)
 int
 nextHistory(stringData* result)
 {
-  if (!historyArr.currentHistory || historyArr.numOfCmdsInMem - historyArr.currentHistory >= MAX_HISTORY - 1)
+  if (!historyArr.currentHistory || historyArr.numOfCmdsInMem - historyArr.currentHistory >= MAX_HISTORY)
     return -1;
 
   historyArr.currentHistory--;
-  result->length = historyArr.lensArr[historyArr.currentHistory];
-  strncpy(result->str, historyArr.bufferArr[historyArr.currentHistory], result->length);
+  result->length = historyArr.cmd[historyArr.currentHistory % MAX_HISTORY].length;
+  strncpy(result->str, historyArr.cmd[historyArr.currentHistory % MAX_HISTORY].str, result->length);
   return result->length;
 }
 
