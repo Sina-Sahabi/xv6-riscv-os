@@ -89,3 +89,23 @@ sys_uptime(void)
   release(&tickslock);
   return xticks;
 }
+
+// return histroy of commands
+uint64
+sys_histry(void)
+{
+  stringData *str;
+  stringData kstr;
+
+  argaddr(0, (uint64 *)&str);
+
+  acquire(&tickslock);
+  int res = nextHistory(&kstr);
+  release(&tickslock);
+  
+  struct proc *p = myproc();
+  if(res != -1 && copyout(p->pagetable, (uint64)str, (char*)&kstr, sizeof(kstr)) < 0)
+    return -1;
+  
+  return res;
+}
