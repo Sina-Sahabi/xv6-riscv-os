@@ -681,3 +681,36 @@ procdump(void)
     printf("\n");
   }
 }
+
+void
+fill_pinfo(struct proc_info *pi, struct proc *p)
+{
+  strncpy(pi->name, p->name, 16);
+  
+  // p->lock acquired
+  pi->state = p->state;
+  pi->pid = p->pid;
+  
+  acquire(&wait_lock);
+  pi->ppid = p->parent->pid;
+  release(&wait_lock);
+}
+
+void
+fill_top(struct top *t)
+{
+  struct proc *p;
+  t->running_process = t->sleeping_process = t->total_process = 0;
+
+  for(p = proc; p < &proc[NPROC]; p++) {
+    acquire(&p->lock);
+    if(p->state != UNUSED) {
+      fill_pinfo(t->p_list + t->total_process, p);
+      if (t->p_list[t->total_process].state == RUNNING)
+        t->running_process++; 
+      if (t->p_list[t->total_process].state == SLEEPING)
+        t->sleeping_process++; 
+    }
+    release(&p->lock);
+  }
+}

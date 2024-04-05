@@ -14,3 +14,6 @@ typedef struct {
   char str [MAX_STR_DATA];
   uint length;
 } stringData;
+
+struct top_info;
+struct top;

@@ -113,3 +113,24 @@ sys_histry(void)
   
   return res;
 }
+
+// return current process info
+uint64
+sys_top(void)
+{
+  struct top *t;
+  struct top kt;
+
+  argaddr(0, (uint64 *)&t);
+
+  kt.uptime = sys_uptime();
+  acquire(&tickslock);
+  fill_top(&kt);
+  release(&tickslock);
+
+  struct proc *p = myproc();
+  if(copyout(p->pagetable, (uint64)t, (char*)&kt, sizeof(kt)) < 0)
+    return -1;
+  
+  return 0;
+}
