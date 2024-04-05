@@ -8,18 +8,19 @@ int main(int argc, char *argv[])
     stringData str [20];
     int ind, len, n;
     
-    histry(-1);
+    histry(0);
     for (ind = 0; (len = histry(&str[ind])) >= 0; ind++)
       str[ind].str[len] = 0;
-    
-    if (!ind) {
+    histry(0);
+
+    if (ind < 2) {
       printf("history not found\n");
       exit(0);
     }
 
-    len = ind;
-    while (ind--)
-      printf("%d.\t%s\n", ind, str[ind].str);
+    len = ind - 1;
+    while (--ind)
+      printf("%d.\t%s\n", ind - 1, str[ind].str);
     
     if (argc == 2) {
       n = atoi(argv[1]);
@@ -27,7 +28,7 @@ int main(int argc, char *argv[])
         fprintf(2, "history: argument error\n");
         exit(1);
       }
-      printf("requested command: %s\n", str[n].str);
+      printf("requested command: %s\n", str[n + 1].str);
     }
   } else {
     fprintf(2, "history: argument error\n");

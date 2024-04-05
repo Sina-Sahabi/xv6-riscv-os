@@ -142,7 +142,7 @@ save_history(void) {
     historyArr.cmd[ind].str[len++] = cons.buf[i % INPUT_BUF_SIZE];
   historyArr.cmd[ind].str[len] = '\0';
   historyArr.cmd[ind].length = len;
-  historyArr.currentHistory = historyArr.numOfCmdsInMem++;
+  historyArr.currentHistory = ++historyArr.numOfCmdsInMem;
 }
 
 
@@ -178,8 +178,9 @@ consoleintr(int c)
       switch (c)
       {
       case 'A': // code for arrow up
-        if (historyArr.currentHistory >= 0 &&
-        historyArr.numOfCmdsInMem - historyArr.currentHistory < MAX_HISTORY) {
+        if (historyArr.currentHistory > 0 &&
+        historyArr.numOfCmdsInMem - historyArr.currentHistory < MAX_HISTORY - 1) {
+          historyArr.currentHistory--;
           for (; cons.e < cons.w; cons.e++) {
             consputc('\033'), consputc('['), consputc('C');
           }
@@ -196,7 +197,6 @@ consoleintr(int c)
             cons.e++;
             cons.w++;
           }
-          historyArr.currentHistory--;
         }
         break;
       case 'B': // code for arrow down
@@ -305,8 +305,8 @@ consoleintr(int c)
 int
 nextHistory(stringData* result)
 {
-  if (result == -1) {
-    historyArr.currentHistory = historyArr.numOfCmdsInMem - 1;
+  if (result == 0) {
+    historyArr.currentHistory = historyArr.numOfCmdsInMem;
     return 0;
   }
   if (!historyArr.currentHistory || historyArr.numOfCmdsInMem - historyArr.currentHistory >= MAX_HISTORY)
