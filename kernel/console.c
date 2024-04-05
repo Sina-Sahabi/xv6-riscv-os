@@ -156,7 +156,6 @@ void
 consoleintr(int c)
 {
   acquire(&cons.lock);
-  // printf("\n<%d>\n", c);
   if (c == '\033') { // esc
     cons.escape = 1;
     goto consrel;
