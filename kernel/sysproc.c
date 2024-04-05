@@ -116,7 +116,7 @@ sys_histry(void)
 
 // return current process info
 uint64
-sys_top(void)
+sys_ttop(void)
 {
   struct top *t;
   struct top kt;

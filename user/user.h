@@ -23,7 +23,7 @@ char* sbrk(int);
 int sleep(int);
 int uptime(void);
 int histry(stringData*);
-int top(struct top*);
+int ttop(struct top*);
 
 // ulib.c
 int stat(const char*, struct stat*);

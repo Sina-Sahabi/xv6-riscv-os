@@ -682,7 +682,7 @@ procdump(void)
   }
 }
 
-void
+inline void
 fill_pinfo(struct proc_info *pi, struct proc *p)
 {
   strncpy(pi->name, p->name, 16);
@@ -692,7 +692,9 @@ fill_pinfo(struct proc_info *pi, struct proc *p)
   pi->pid = p->pid;
   
   acquire(&wait_lock);
-  pi->ppid = p->parent->pid;
+  pi->ppid = 0;
+  if (p->parent)
+    pi->ppid = p->parent->pid;
   release(&wait_lock);
 }
 
@@ -709,7 +711,8 @@ fill_top(struct top *t)
       if (t->p_list[t->total_process].state == RUNNING)
         t->running_process++; 
       if (t->p_list[t->total_process].state == SLEEPING)
-        t->sleeping_process++; 
+        t->sleeping_process++;
+      t->total_process++;
     }
     release(&p->lock);
   }
