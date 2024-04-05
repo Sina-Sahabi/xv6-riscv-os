@@ -99,6 +99,10 @@ sys_histry(void)
 
   argaddr(0, (uint64 *)&str);
 
+  if (str == -1) {
+    return nextHistory(-1);
+  }
+
   acquire(&tickslock);
   int res = nextHistory(&kstr);
   release(&tickslock);

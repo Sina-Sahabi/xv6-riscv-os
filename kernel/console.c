@@ -50,6 +50,7 @@ struct {
   uint r;  // Read index
   uint w;  // Write index
   uint e;  // Edit index
+  int escape;
 } cons;
 
 struct { // will be protected by cons.lock
@@ -144,7 +145,6 @@ save_history(void) {
   historyArr.currentHistory = historyArr.numOfCmdsInMem++;
 }
 
-int escape;
 
 //
 // the console input interrupt handler.
@@ -156,21 +156,115 @@ void
 consoleintr(int c)
 {
   acquire(&cons.lock);
+  // printf("\n<%d>\n", c);
+  if (c == '\033') { // esc
+    cons.escape = 1;
+    goto consrel;
+  }
+      
+  if (cons.escape == 1) {
+    if (c == '[') {
+      cons.escape = 2;
+      goto consrel;
+    } else { //?
+      consputc('\033');
+      cons.escape = 0;
+    }
+  }
 
+  if (cons.escape == 2) {
+    cons.escape = 0;
+    if (c == 'A' || c == 'B' || c == 'C' || c == 'D') {
+      switch (c)
+      {
+      case 'A': // code for arrow up
+        if (historyArr.currentHistory >= 0 &&
+        historyArr.numOfCmdsInMem - historyArr.currentHistory < MAX_HISTORY) {
+          for (; cons.e < cons.w; cons.e++) {
+            consputc('\033'), consputc('['), consputc('C');
+          }
+          while(cons.e != cons.r &&
+          cons.buf[(cons.e-1) % INPUT_BUF_SIZE] != '\n'){
+            cons.e--;
+            cons.w--;
+            consputc(BACKSPACE);
+          }
+
+          for (int i = 0; i < historyArr.cmd[historyArr.currentHistory % MAX_HISTORY].length; i++) {
+            consputc(cons.buf[cons.e % INPUT_BUF_SIZE] = 
+            historyArr.cmd[historyArr.currentHistory % MAX_HISTORY].str[i]);
+            cons.e++;
+            cons.w++;
+          }
+          historyArr.currentHistory--;
+        }
+        break;
+      case 'B': // code for arrow down
+        if (historyArr.currentHistory < historyArr.numOfCmdsInMem - 1) {
+          historyArr.currentHistory++;
+          for (; cons.e < cons.w; cons.e++) {
+            consputc('\033'), consputc('['), consputc('C');
+          }
+          while(cons.e != cons.r &&
+          cons.buf[(cons.e-1) % INPUT_BUF_SIZE] != '\n'){
+            cons.e--;
+            cons.w--;
+            consputc(BACKSPACE);
+          }
+
+          for (int i = 0; i < historyArr.cmd[historyArr.currentHistory % MAX_HISTORY].length; i++) {
+            consputc(cons.buf[cons.e % INPUT_BUF_SIZE] = 
+            historyArr.cmd[historyArr.currentHistory % MAX_HISTORY].str[i]);
+            cons.e++;
+            cons.w++;
+          }
+        }
+        break;
+      case 'C': // code for arrow right
+        if (cons.e < cons.w) {
+          consputc('\033');
+          consputc('[');
+          consputc('C');
+          cons.e++;
+        }
+        break;
+      case 'D': // code for arrow left
+        if (cons.r < cons.e) {
+          consputc('\033');
+          consputc('[');
+          consputc('D');
+          cons.e--;
+        }
+        break;
+      }
+      goto consrel;
+    } else {
+      consputc('\033');
+      consputc('[');
+    }
+  }
+
+  cons.escape = 0;
   switch(c){
   case C('P'):  // Print process list.
     procdump();
     break;
   case C('U'):  // Kill line.
-    while(cons.e != cons.w &&
+    for (; cons.e < cons.w; cons.e++) {
+      consputc('\033'), consputc('['), consputc('C');
+    }
+    while(cons.e != cons.r &&
           cons.buf[(cons.e-1) % INPUT_BUF_SIZE] != '\n'){
       cons.e--;
+      cons.w--;
       consputc(BACKSPACE);
     }
     break;
   case C('H'): // Backspace
   case '\x7f': // Delete key
-    if(cons.e != cons.w){
+    if(cons.e != cons.r){
+      if (cons.e == cons.w)
+        cons.w--;
       cons.e--;
       consputc(BACKSPACE);
     }
@@ -178,34 +272,17 @@ consoleintr(int c)
   default:
     if(c != 0 && cons.e-cons.r < INPUT_BUF_SIZE){
       c = (c == '\r') ? '\n' : c;
-
       // echo back to the user.
       consputc(c);
 
-      if (c == '\033') { // esc
-        escape = 1;
-        break;
-      }
-      
-      if (escape == 1 && c == '[') {
-        escape = 2;
-        break;
-      } else { //?
-        escape = 0;
-      }
-
-      if (escape == 2 && (c == 'A' || c == 'B' || c == 'C' || c == 'D')) {
-        escape = 0;
-        break;
-      }
-
       // store for consumption by consoleread().
       cons.buf[cons.e++ % INPUT_BUF_SIZE] = c;
+      if (cons.e > cons.w)
+        cons.w = cons.e;
 
       if(c == '\n' || c == C('D') || cons.e-cons.r == INPUT_BUF_SIZE){
         // wake up consoleread() if a whole line (or end-of-file)
         // has arrived.
-        cons.w = cons.e;
         save_history();
         wakeup(&cons.r);
       }
@@ -213,6 +290,7 @@ consoleintr(int c)
     break;
   }
   
+  consrel:
   release(&cons.lock);
 }
 
@@ -227,6 +305,10 @@ consoleintr(int c)
 int
 nextHistory(stringData* result)
 {
+  if (result == -1) {
+    historyArr.currentHistory = historyArr.numOfCmdsInMem - 1;
+    return 0;
+  }
   if (!historyArr.currentHistory || historyArr.numOfCmdsInMem - historyArr.currentHistory >= MAX_HISTORY)
     return -1;
 

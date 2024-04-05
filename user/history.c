@@ -8,6 +8,7 @@ int main(int argc, char *argv[])
     stringData str [20];
     int ind, len, n;
     
+    histry(-1);
     for (ind = 0; (len = histry(&str[ind])) >= 0; ind++)
       str[ind].str[len] = 0;
     
