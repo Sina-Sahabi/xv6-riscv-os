@@ -53,7 +53,7 @@ struct {
 } cons;
 
 struct { // will be protected by cons.lock
-#define MAX_HISTORY 4
+#define MAX_HISTORY 17
   stringData cmd [MAX_HISTORY];
   uint numOfCmdsInMem;
   uint currentHistory;
