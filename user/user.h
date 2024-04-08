@@ -1,4 +1,6 @@
 struct stat;
+struct proc_info;
+struct top;
 
 // system calls
 int fork(void);

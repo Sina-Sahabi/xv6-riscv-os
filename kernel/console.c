@@ -199,17 +199,17 @@ consoleintr(int c)
         }
         break;
       case 'B': // code for arrow down
+        for (; cons.e < cons.w; cons.e++) {
+          consputc('\033'), consputc('['), consputc('C');
+        }
+        while(cons.e != cons.r &&
+        cons.buf[(cons.e-1) % INPUT_BUF_SIZE] != '\n'){
+          cons.e--;
+          cons.w--;
+          consputc(BACKSPACE);
+        }
         if (historyArr.currentHistory < historyArr.numOfCmdsInMem - 1) {
           historyArr.currentHistory++;
-          for (; cons.e < cons.w; cons.e++) {
-            consputc('\033'), consputc('['), consputc('C');
-          }
-          while(cons.e != cons.r &&
-          cons.buf[(cons.e-1) % INPUT_BUF_SIZE] != '\n'){
-            cons.e--;
-            cons.w--;
-            consputc(BACKSPACE);
-          }
 
           for (int i = 0; i < historyArr.cmd[historyArr.currentHistory % MAX_HISTORY].length; i++) {
             consputc(cons.buf[cons.e % INPUT_BUF_SIZE] = 
