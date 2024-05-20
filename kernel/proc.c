@@ -127,6 +127,7 @@ found:
   acquire(&tickslock);
   p->ctime = ticks;
   release(&tickslock);
+  p->rtime = 0;
 
   // Allocate a trapframe page.
   if((p->trapframe = (struct trapframe *)kalloc()) == 0){
@@ -462,6 +463,7 @@ scheduler(void)
         // to release its lock and then reacquire it
         // before jumping back to us.
         p->state = RUNNING;
+        p->rtime++;
         c->proc = p;
         swtch(&c->context, &p->context);
 
@@ -663,7 +665,7 @@ procdump(void)
 {
   static char *states[] = {
   [UNUSED]    "unused",
-  [USED]      "used",
+  [USED]      "used  ",
   [SLEEPING]  "sleep ",
   [RUNNABLE]  "runble",
   [RUNNING]   "run   ",
