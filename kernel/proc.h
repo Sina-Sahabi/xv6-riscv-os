@@ -113,11 +113,13 @@ struct proc_info {
   int pid;
   int ppid;
   enum procstate state;
+  uint ctime;
+  uint rtime;
 };
 
 struct top {
   struct proc_info p_list[64];
-  long uptime;
+  uint uptime;
   int total_process;
   int running_process;
   int sleeping_process;

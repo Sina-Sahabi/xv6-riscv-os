@@ -54,6 +54,7 @@ procinit(void)
   for(p = proc; p < &proc[NPROC]; p++) {
       initlock(&p->lock, "proc");
       p->state = UNUSED;
+      p->ctime = p->rtime = 0;
       p->kstack = KSTACK((int) (p - proc));
   }
 }
@@ -173,6 +174,7 @@ freeproc(struct proc *p)
   p->killed = 0;
   p->xstate = 0;
   p->state = UNUSED;
+  p->ctime = p->rtime = 0;
 }
 
 // Create a user page table for a given process, with no user memory,
@@ -324,6 +326,10 @@ fork(void)
 
   acquire(&np->lock);
   np->state = RUNNABLE;
+  acquire(&tickslock);
+  np->ctime = ticks;
+  release(&tickslock);
+  np->rtime = 0;
   release(&np->lock);
 
   return pid;
@@ -463,7 +469,9 @@ scheduler(void)
         // to release its lock and then reacquire it
         // before jumping back to us.
         p->state = RUNNING;
+        // acquire(&tickslock);
         p->rtime++;
+        // release(&tickslock);
         c->proc = p;
         swtch(&c->context, &p->context);
 
@@ -695,6 +703,8 @@ fill_pinfo(struct proc_info *pi, struct proc *p)
   // p->lock acquired
   pi->state = p->state;
   pi->pid = p->pid;
+  pi->ctime = p->ctime;
+  pi->rtime = p->rtime;
   
   acquire(&wait_lock);
   pi->ppid = 0;

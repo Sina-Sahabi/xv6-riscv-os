@@ -279,10 +279,11 @@ consoleintr(int c)
       if (cons.e > cons.w)
         cons.w = cons.e;
 
-      if(c == '\n' || c == C('D') || cons.e-cons.r == INPUT_BUF_SIZE){
+      if(c == '\n' || c == C('D') || cons.e-cons.r == INPUT_BUF_SIZE || c == C('C')){
         // wake up consoleread() if a whole line (or end-of-file)
         // has arrived.
-        save_history();
+        if (c != C('C'))
+          save_history();
         wakeup(&cons.r);
       }
     }

@@ -165,6 +165,9 @@ clockintr()
 {
   acquire(&tickslock);
   ticks++;
+  // acquire(&(myproc()->lock));
+  // myproc()->rtime++;
+  // release(&(myproc()->lock));
   wakeup(&ticks);
   release(&tickslock);
 }
@@ -207,6 +210,9 @@ devintr()
 
     if(cpuid() == 0){
       clockintr();
+      // acquire(&(myproc()->lock));
+      // myproc()->rtime++;
+      // release(&(myproc()->lock));
     }
     
     // acknowledge the software interrupt by clearing

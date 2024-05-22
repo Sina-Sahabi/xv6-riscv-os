@@ -7,9 +7,21 @@
 #include "kernel/proc.h"
 #include "user/user.h"
 
-char state_name[][10] = {
-  "unused", "used", "sleeping", "runnable", "running", "zombie"
+char *state_name[] = {
+  [UNUSED]    "unused",
+  [USED]      "used  ",
+  [SLEEPING]  "sleep ",
+  [RUNNABLE]  "runble",
+  [RUNNING]   "run   ",
+  [ZOMBIE]    "zombie"
 };
+
+inline void clear_screen(int n) {
+  for (int i = 0; i < n + 6; i++) {
+    printf("\033[A");
+    printf("\33[2K\r");
+  }
+}
 
 int main(int argc, char *argv[])
 {
@@ -18,17 +30,39 @@ int main(int argc, char *argv[])
     exit(1);
   }
 
-  struct top t;
-  if (ttop(&t))
-    exit(-1);
-  
-  printf("uptime:%d seconds\n", t.uptime / 10);
-  printf("total process:%d\n", t.total_process);
-  printf("running process:%d\n", t.running_process);
-  printf("sleeping process:%d\n", t.sleeping_process);
-  printf("process data:\nname\tPID\tPPID\tstate\n");
-  for (int i = 0; i < t.total_process; i++) {
-    printf("%s\t%d\t%d\t%s\n", t.p_list[i].name, t.p_list[i].pid, t.p_list[i].ppid, state_name[t.p_list[i].state]);
+  int pid = fork();
+
+  if (!pid) {
+    struct top t;
+
+    for (;;) {
+      if (ttop(&t))
+        exit(-1);
+
+      int x;
+      printf("uptime: %d second(s)\n", t.uptime / 10);
+      printf("total process:%d\n", x = t.total_process);
+      printf("running process:%d\n", t.running_process);
+      printf("sleeping process:%d\n", t.sleeping_process);
+      printf("process data:\nname\tPID\tPPID\tstate\ttime\tCPU%%\n");
+      for (int i = 0; i < x; i++) {
+        printf("%s\t%d\t%d\t%s\t%d\t%d.%d\n",
+        t.p_list[i].name, t.p_list[i].pid, t.p_list[i].ppid, state_name[t.p_list[i].state], t.p_list[i].ctime / 10,
+        t.p_list[i].rtime * 100L / t.uptime, (t.p_list[i].rtime * 10000L / t.uptime) % 100);
+      }
+
+      sleep(20);
+      clear_screen(x);
+    }
+  } else {
+    for (;;) {
+      char ch;
+      read(0, &ch, 1);
+      if (ch == ('C' - '@')) {
+        kill(pid);
+        break;
+      }
+    }
   }
   
   exit(0);
