@@ -5,5 +5,8 @@
 int main(int argc, char *argv[])
 {
   printf("My first xv6 program\n");
+  if (!fork()) {
+    for(;;);
+  }
   exit(0);
 }
