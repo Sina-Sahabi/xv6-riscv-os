@@ -16,6 +16,8 @@ void kernelvec();
 
 extern int devintr();
 
+extern struct proc proc[NPROC];
+
 void
 trapinit(void)
 {
@@ -163,13 +165,20 @@ kerneltrap()
 void
 clockintr()
 {
-  acquire(&tickslock);
-  ticks++;
-  // acquire(&(myproc()->lock));
-  // myproc()->rtime++;
-  // release(&(myproc()->lock));
-  wakeup(&ticks);
-  release(&tickslock);
+  if(cpuid() == 0){
+    acquire(&tickslock);
+    ticks++;
+    wakeup(&ticks);
+    release(&tickslock);
+  }
+
+  struct proc *p = myproc();
+  if (p != 0) {
+    acquire(&(p->lock));
+    if (p->state == RUNNING)
+      p->rtime++;
+    release(&(p->lock));
+  }
 }
 
 // check if it's an external interrupt or software interrupt,
@@ -208,12 +217,7 @@ devintr()
     // software interrupt from a machine-mode timer interrupt,
     // forwarded by timervec in kernelvec.S.
 
-    if(cpuid() == 0){
-      clockintr();
-      // acquire(&(myproc()->lock));
-      // myproc()->rtime++;
-      // release(&(myproc()->lock));
-    }
+    clockintr();
     
     // acknowledge the software interrupt by clearing
     // the SSIP bit in sip.
