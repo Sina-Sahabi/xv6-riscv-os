@@ -79,12 +79,8 @@ usertrap(void)
     exit(-1);
 
   // give up the CPU if this is a timer interrupt.
-  if(which_dev == 2) {
-    acquire(&p->lock);
-    uint r = --p->ticks_remain;
-    release(&p->lock);
-    if (!r)
-      yield();
+  if(which_dev == 2 && p->ticks_remain == 0) {
+    yield();
   }
 
   usertrapret();
@@ -158,13 +154,8 @@ kerneltrap()
   }
 
   // give up the CPU if this is a timer interrupt.
-  if(which_dev == 2 && myproc() != 0 && myproc()->state == RUNNING) {
-    struct proc *p = myproc();
-    acquire(&p->lock);
-    uint r = --p->ticks_remain;
-    release(&p->lock);
-    if (!r)
-      yield();
+  if(which_dev == 2 && myproc() != 0 && myproc()->state == RUNNING && myproc()->ticks_remain == 0) {
+    yield();
   }
 
   // the yield() may have caused some traps to occur,
@@ -186,8 +177,11 @@ clockintr()
   struct proc *p = myproc();
   if (p != 0) {
     acquire(&(p->lock));
-    if (p->state == RUNNING)
+    if (p->state == RUNNING) {
       p->rtime++;
+      if (p->ticks_remain)
+        p->ticks_remain--;
+    }
     release(&(p->lock));
   }
 }

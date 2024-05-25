@@ -55,7 +55,7 @@ procinit(void)
       initlock(&p->lock, "proc");
       p->state = UNUSED;
       p->ctime = p->rtime = p->ticks_remain = 0;
-      p->priority = 1;
+      p->priority = 0;
       p->kstack = KSTACK((int) (p - proc));
   }
 }
@@ -176,7 +176,7 @@ freeproc(struct proc *p)
   p->killed = 0;
   p->xstate = 0;
   p->state = UNUSED;
-  p->ctime = p->rtime = p->priority = 0;
+  p->ctime = p->rtime = p->priority = p->ticks_remain = 0;
 }
 
 // Create a user page table for a given process, with no user memory,
@@ -328,10 +328,10 @@ fork(void)
 
   acquire(&np->lock);
   np->state = RUNNABLE;
-  acquire(&tickslock);
-  np->ctime = ticks;
-  release(&tickslock);
-  np->rtime = 0;
+  // acquire(&tickslock);
+  // np->ctime = ticks;
+  // release(&tickslock);
+  // np->rtime = 0;
   release(&np->lock);
 
   return pid;
@@ -461,44 +461,29 @@ scheduler(void)
   struct cpu *c = mycpu();
   
   c->proc = 0;
+  begin:
   for(;;){
     // Avoid deadlock by ensuring that devices can interrupt.
     intr_on();
-
-    // for(p = proc; p < &proc[NPROC]; p++) {
-    //   acquire(&p->lock);
-    //   if(p->state == RUNNABLE) {
-    //     // Switch to chosen process.  It is the process's job
-    //     // to release its lock and then reacquire it
-    //     // before jumping back to us.
-    //     p->state = RUNNING;
-    //     c->proc = p;
-    //     swtch(&c->context, &p->context);
-
-    //     // Process is done running for now.
-    //     // It should have changed its p->state before coming back.
-    //     c->proc = 0;
-    //   }
-    //   release(&p->lock);
-    // }
     
-    begin:
-    for(uint i = 0; i < NPROC; i++) {
+    for(int i = 0; i < NPROC; i++) {
       p = proc + ((p1 + i) % NPROC);
       acquire(&p->lock);
-      if(p->state == RUNNABLE && p->priority == 1 && !p->ticks_remain) {
+      if(p->state == RUNNABLE && p->priority == 1) {
         // Switch to chosen process.  It is the process's job
         // to release its lock and then reacquire it
         // before jumping back to us.
-        p->state = RUNNING;
         p->ticks_remain = 5;
+        p->state = RUNNING;
         p1 += i + 1;
         c->proc = p;
+        // printf("%d is entering on 1!\n", p->pid);
         swtch(&c->context, &p->context);
 
         // Process is done running for now.
         // It should have changed its p->state before coming back.
-        p->priority = 2;
+        if (p->ticks_remain == 0)
+          p->priority = 2;
         c->proc = 0;
         release(&p->lock);
         goto begin;
@@ -509,7 +494,7 @@ scheduler(void)
     for(uint i = 0; i < NPROC; i++) {
       p = proc + ((p2 + i) % NPROC);
       acquire(&p->lock);
-      if(p->state == RUNNABLE && p->priority == 2 && !p->ticks_remain) {
+      if(p->state == RUNNABLE && p->priority == 2) {
         // Switch to chosen process.  It is the process's job
         // to release its lock and then reacquire it
         // before jumping back to us.
@@ -517,11 +502,13 @@ scheduler(void)
         p->ticks_remain = 10;
         p2 += i + 1;
         c->proc = p;
+        // printf("%d is entering on 2!\n", p->pid);
         swtch(&c->context, &p->context);
 
         // Process is done running for now.
         // It should have changed its p->state before coming back.
-        p->priority = 3;
+        if (p->ticks_remain == 0)
+          p->priority = 3;
         c->proc = 0;
         release(&p->lock);
         goto begin;
@@ -532,7 +519,7 @@ scheduler(void)
     for(uint i = 0; i < NPROC; i++) {
       p = proc + ((p3 + i) % NPROC);
       acquire(&p->lock);
-      if(p->state == RUNNABLE && p->priority == 3 && !p->ticks_remain) {
+      if(p->state == RUNNABLE && p->priority == 3) {
         // Switch to chosen process.  It is the process's job
         // to release its lock and then reacquire it
         // before jumping back to us.
@@ -540,6 +527,7 @@ scheduler(void)
         p->ticks_remain = 20;
         p3 += i + 1;
         c->proc = p;
+        // printf("%d is entering on 3!\n", p->pid);
         swtch(&c->context, &p->context);
 
         // Process is done running for now.
