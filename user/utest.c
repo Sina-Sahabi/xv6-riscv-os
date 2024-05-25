@@ -5,8 +5,14 @@
 int main(int argc, char *argv[])
 {
   printf("My first xv6 program\n");
-  if (!fork()) {
+  int pid;
+  if (!(pid = fork())) {
     for(;;);
   }
+  if (!fork()) {
+    sleep(800);
+    kill(pid);
+  }
+
   exit(0);
 }

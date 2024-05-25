@@ -40,18 +40,18 @@ int main(int argc, char *argv[])
         exit(-1);
 
       int x;
-      printf("uptime: %d second(s)\n", t.uptime / 10);
+      printf("uptime: %d second(s)\n", t.uptime / 100);
       printf("total process:%d\n", x = t.total_process);
       printf("running process:%d\n", t.running_process);
       printf("sleeping process:%d\n", t.sleeping_process);
       printf("process data:\nname\tPID\tPPID\tstate\ttime\tCPU%%\n");
       for (int i = 0; i < x; i++) {
         printf("%s\t%d\t%d\t%s\t%d\t%d.%d\n",
-        t.p_list[i].name, t.p_list[i].pid, t.p_list[i].ppid, state_name[t.p_list[i].state], t.p_list[i].ctime / 10,
+        t.p_list[i].name, t.p_list[i].pid, t.p_list[i].ppid, state_name[t.p_list[i].state], t.p_list[i].ctime / 100,
         t.p_list[i].rtime * 100L / t.uptime, (t.p_list[i].rtime * 10000L / t.uptime) % 100);
       }
 
-      sleep(20);
+      sleep(200);
       clear_screen(x);
     }
   } else {
