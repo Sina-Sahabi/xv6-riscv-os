@@ -54,7 +54,8 @@ procinit(void)
   for(p = proc; p < &proc[NPROC]; p++) {
       initlock(&p->lock, "proc");
       p->state = UNUSED;
-      p->ctime = p->rtime = 0;
+      p->ctime = p->rtime = p->ticks_remain = 0;
+      p->priority = 1;
       p->kstack = KSTACK((int) (p - proc));
   }
 }
@@ -128,7 +129,8 @@ found:
   acquire(&tickslock);
   p->ctime = ticks;
   release(&tickslock);
-  p->rtime = 0;
+  p->rtime = p->ticks_remain = 0;
+  p->priority = 1;
 
   // Allocate a trapframe page.
   if((p->trapframe = (struct trapframe *)kalloc()) == 0){
@@ -174,7 +176,7 @@ freeproc(struct proc *p)
   p->killed = 0;
   p->xstate = 0;
   p->state = UNUSED;
-  p->ctime = p->rtime = 0;
+  p->ctime = p->rtime = p->priority = 0;
 }
 
 // Create a user page table for a given process, with no user memory,
@@ -454,6 +456,7 @@ wait(uint64 addr)
 void
 scheduler(void)
 {
+  uint p1 = 0, p2 = 0, p3 = 0;
   struct proc *p;
   struct cpu *c = mycpu();
   
@@ -462,19 +465,88 @@ scheduler(void)
     // Avoid deadlock by ensuring that devices can interrupt.
     intr_on();
 
-    for(p = proc; p < &proc[NPROC]; p++) {
+    // for(p = proc; p < &proc[NPROC]; p++) {
+    //   acquire(&p->lock);
+    //   if(p->state == RUNNABLE) {
+    //     // Switch to chosen process.  It is the process's job
+    //     // to release its lock and then reacquire it
+    //     // before jumping back to us.
+    //     p->state = RUNNING;
+    //     c->proc = p;
+    //     swtch(&c->context, &p->context);
+
+    //     // Process is done running for now.
+    //     // It should have changed its p->state before coming back.
+    //     c->proc = 0;
+    //   }
+    //   release(&p->lock);
+    // }
+    
+    begin:
+    for(uint i = 0; i < NPROC; i++) {
+      p = proc + ((p1 + i) % NPROC);
       acquire(&p->lock);
-      if(p->state == RUNNABLE) {
+      if(p->state == RUNNABLE && p->priority == 1 && !p->ticks_remain) {
         // Switch to chosen process.  It is the process's job
         // to release its lock and then reacquire it
         // before jumping back to us.
         p->state = RUNNING;
+        p->ticks_remain = 5;
+        p1 += i + 1;
+        c->proc = p;
+        swtch(&c->context, &p->context);
+
+        // Process is done running for now.
+        // It should have changed its p->state before coming back.
+        p->priority = 2;
+        c->proc = 0;
+        release(&p->lock);
+        goto begin;
+      }
+      release(&p->lock);
+    }
+
+    for(uint i = 0; i < NPROC; i++) {
+      p = proc + ((p2 + i) % NPROC);
+      acquire(&p->lock);
+      if(p->state == RUNNABLE && p->priority == 2 && !p->ticks_remain) {
+        // Switch to chosen process.  It is the process's job
+        // to release its lock and then reacquire it
+        // before jumping back to us.
+        p->state = RUNNING;
+        p->ticks_remain = 10;
+        p2 += i + 1;
+        c->proc = p;
+        swtch(&c->context, &p->context);
+
+        // Process is done running for now.
+        // It should have changed its p->state before coming back.
+        p->priority = 3;
+        c->proc = 0;
+        release(&p->lock);
+        goto begin;
+      }
+      release(&p->lock);
+    }
+
+    for(uint i = 0; i < NPROC; i++) {
+      p = proc + ((p3 + i) % NPROC);
+      acquire(&p->lock);
+      if(p->state == RUNNABLE && p->priority == 3 && !p->ticks_remain) {
+        // Switch to chosen process.  It is the process's job
+        // to release its lock and then reacquire it
+        // before jumping back to us.
+        p->state = RUNNING;
+        p->ticks_remain = 20;
+        p3 += i + 1;
         c->proc = p;
         swtch(&c->context, &p->context);
 
         // Process is done running for now.
         // It should have changed its p->state before coming back.
         c->proc = 0;
+        release(&p->lock);
+        goto begin;
       }
       release(&p->lock);
     }
