@@ -81,16 +81,12 @@ usertrap(void)
     flags = PTE_FLAGS(*pte);
     if ((flags & PTE_U) && !(flags & PTE_W) && (flags & PTE_COW)) {
       pa = PTE2PA(*pte);
-      if (decrement(pa)) {
-        if((mem = kalloc()) == 0)
-          panic("no memory");
-        memmove(mem, (char*)pa, PGSIZE);
-        flags ^= PTE_COW ^ PTE_W;
-        *pte = PA2PTE(mem) | flags;
-      } else {
-        increment(pa);
-        *pte ^= PTE_COW ^ PTE_W;
-      }
+      if((mem = kalloc()) == 0)
+        panic("no memory");
+      memmove(mem, (char*)pa, PGSIZE);
+      flags ^= PTE_COW ^ PTE_W;
+      *pte = PA2PTE(mem) | flags;
+      kfree((void*)pa);
     } else {
       printf("usertrap(): unexpected page fault at va=%p pid=%d\n", va, p->pid);
       setkilled(p);
