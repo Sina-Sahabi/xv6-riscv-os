@@ -328,10 +328,6 @@ fork(void)
 
   acquire(&np->lock);
   np->state = RUNNABLE;
-  // acquire(&tickslock);
-  // np->ctime = ticks;
-  // release(&tickslock);
-  // np->rtime = 0;
   release(&np->lock);
 
   return pid;
