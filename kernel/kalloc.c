@@ -21,6 +21,8 @@ struct run {
 struct {
   struct spinlock lock;
   struct run *freelist;
+  uint64 total_pages;
+  uint64 used_pages;
 } kmem;
 
 struct {
@@ -33,8 +35,17 @@ kinit()
 {
   initlock(&kmem.lock, "kmem");
   initlock(&kref.lock, "kref");
-  memset(kref.ref, 0, sizeof kref.ref);
+  kmem.total_pages = ((char*)PHYSTOP - end) / PGSIZE;
   freerange(end, (void*)PHYSTOP);
+}
+
+void
+freerange(void *pa_start, void *pa_end)
+{
+  char *p;
+  p = (char*)PGROUNDUP((uint64)pa_start);
+  for(; p + PGSIZE <= (char*)pa_end; p += PGSIZE)
+    kfree(p);
 }
 
 int
@@ -43,7 +54,7 @@ decrement(uint64 pa)
   acquire(&kref.lock);
   int tmp = 0;
   if (kref.ref[pa / PGSIZE])
-    tmp = --kref.ref[pa / PGSIZE];
+    tmp = kref.ref[pa / PGSIZE]--;
   release(&kref.lock);
   return tmp;
 }
@@ -56,13 +67,22 @@ increment(uint64 pa)
   release(&kref.lock);
 }
 
-void
-freerange(void *pa_start, void *pa_end)
+uint64
+get_total_pages()
 {
-  char *p;
-  p = (char*)PGROUNDUP((uint64)pa_start);
-  for(; p + PGSIZE <= (char*)pa_end; p += PGSIZE)
-    kfree(p);
+  acquire(&kmem.lock);
+  uint64 total = kmem.total_pages;
+  release(&kmem.lock);
+  return total;
+}
+
+uint64
+get_used_pages()
+{
+  acquire(&kmem.lock);
+  uint64 used = kmem.used_pages;
+  release(&kmem.lock);
+  return used;
 }
 
 // Free the page of physical memory pointed at by pa,
@@ -77,7 +97,8 @@ kfree(void *pa)
   if(((uint64)pa % PGSIZE) != 0 || (char*)pa < end || (uint64)pa >= PHYSTOP)
     panic("kfree");
 
-  if (decrement((uint64)pa))
+  int ref;
+  if ((ref = decrement((uint64)pa)) > 1)
     return;
 
   // Fill with junk to catch dangling refs.
@@ -88,6 +109,7 @@ kfree(void *pa)
   acquire(&kmem.lock);
   r->next = kmem.freelist;
   kmem.freelist = r;
+  kmem.used_pages -= (ref? 1 : 0);
   release(&kmem.lock);
 }
 
@@ -102,7 +124,8 @@ kalloc(void)
   acquire(&kmem.lock);
   r = kmem.freelist;
   if(r)
-    kmem.freelist = r->next;
+    kmem.freelist = r->next,
+    kmem.used_pages++;
   release(&kmem.lock);
 
   if(r) {

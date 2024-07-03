@@ -136,6 +136,7 @@ UPROGS=\
 	$U/_history\
 	$U/_top\
 	$U/_ctest\
+	$U/_cowtest\
 
 fs.img: mkfs/mkfs README $(UPROGS)
 	mkfs/mkfs fs.img README $(UPROGS)

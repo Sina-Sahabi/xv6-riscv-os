@@ -117,6 +117,7 @@ struct proc_info {
   enum procstate state;
   uint ctime;
   uint rtime;
+  uint64 sz;
 };
 
 struct top {
@@ -125,4 +126,6 @@ struct top {
   int total_process;
   int running_process;
   int sleeping_process;
+  uint64 total_pages;
+  uint64 used_pages;
 };

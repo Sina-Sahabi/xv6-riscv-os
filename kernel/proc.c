@@ -758,6 +758,7 @@ fill_pinfo(struct proc_info *pi, struct proc *p)
   pi->pid = p->pid;
   pi->ctime = p->ctime;
   pi->rtime = p->rtime;
+  pi->sz = p->sz;
   
   acquire(&wait_lock);
   pi->ppid = 0;
@@ -771,6 +772,8 @@ fill_top(struct top *t)
 {
   struct proc *p;
   t->running_process = t->sleeping_process = t->total_process = 0;
+  t->total_pages = get_total_pages();
+  t->used_pages = get_used_pages();
 
   for(p = proc; p < &proc[NPROC]; p++) {
     acquire(&p->lock);

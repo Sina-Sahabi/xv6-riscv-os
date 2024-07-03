@@ -68,6 +68,8 @@ void            kfree(void *);
 void            kinit(void);
 void            increment(uint64);
 int             decrement(uint64);
+uint64          get_total_pages();
+uint64          get_used_pages();
 
 // log.c
 void            initlog(int, struct superblock*);
