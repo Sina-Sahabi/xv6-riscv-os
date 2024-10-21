@@ -137,6 +137,7 @@ UPROGS=\
 	$U/_top\
 	$U/_ctest\
 	$U/_cowtest\
+	$U/_cptest\
 
 fs.img: mkfs/mkfs README $(UPROGS)
 	mkfs/mkfs fs.img README $(UPROGS)

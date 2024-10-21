@@ -134,3 +134,21 @@ sys_ttop(void)
   
   return 0;
 }
+
+// return childern processes
+uint64
+sys_chp(void)
+{
+  struct child_processes *cp;
+  struct child_processes kcp;
+
+  argaddr(0, (uint64 *)&cp);
+
+  int e = fill_chp(&kcp);
+
+  struct proc *p = myproc();
+  if(copyout(p->pagetable, (uint64)cp, (char*)&kcp, sizeof(kcp)) < 0)
+    return -1;
+  
+  return e;
+}

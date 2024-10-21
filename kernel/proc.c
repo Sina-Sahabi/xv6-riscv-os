@@ -788,3 +788,39 @@ fill_top(struct top *t)
     release(&p->lock);
   }
 }
+
+int
+checkAnc(struct proc *ch, struct proc *par) {
+  while (ch->parent != 0) {
+    if (ch->parent->pid == par->pid) {
+      return 1;
+    }
+    ch = ch->parent;
+  }
+  return 0;
+}
+
+int
+fill_chp(struct child_processes *cp) {
+  cp->count = 0;
+  struct proc *mp = myproc();
+  for (struct proc *p = proc; p < &proc[NPROC]; p++) {
+    acquire(&p->lock);
+    // if (p->state != UNUSED) { //!
+    //   printf("%s\t%d\t%d\n", p->name, p->pid, (p->parent != 0 ? p->parent->pid : -1));
+    // }
+    if (p->state != UNUSED && checkAnc(p, mp)) {
+      acquire(&wait_lock);
+      cp->processes[cp->count].ppid = p->parent->pid;
+      release(&wait_lock);
+      
+      strncpy(cp->processes[cp->count].name, p->name, 16);
+      cp->processes[cp->count].state = p->state;
+      cp->processes[cp->count].pid = p->pid;
+      
+      cp->count++;
+    }
+    release(&p->lock);
+  }
+  return 0;
+}

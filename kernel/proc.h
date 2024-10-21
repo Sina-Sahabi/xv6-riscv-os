@@ -129,3 +129,8 @@ struct top {
   uint64 total_pages;
   uint64 used_pages;
 };
+
+struct child_processes {
+  int count;
+  struct proc_info processes [NPROC];
+};

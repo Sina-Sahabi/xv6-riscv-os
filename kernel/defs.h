@@ -10,6 +10,7 @@ struct stat;
 struct superblock;
 struct proc_info;
 struct top;
+struct child_processes;
 
 // bio.c
 void            binit(void);
@@ -114,6 +115,7 @@ int             either_copyout(int user_dst, uint64 dst, void *src, uint64 len);
 int             either_copyin(void *dst, int user_src, uint64 src, uint64 len);
 void            procdump(void);
 void            fill_top(struct top *t);
+int             fill_chp(struct child_processes *cp);
 
 // swtch.S
 void            swtch(struct context*, struct context*);

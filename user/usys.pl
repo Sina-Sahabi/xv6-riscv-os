@@ -38,3 +38,4 @@ entry("sleep");
 entry("uptime");
 entry("histry");
 entry("ttop");
+entry("chp");

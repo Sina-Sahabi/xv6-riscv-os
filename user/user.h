@@ -1,6 +1,7 @@
 struct stat;
 struct proc_info;
 struct top;
+struct child_processes;
 
 // system calls
 int fork(void);
@@ -26,6 +27,7 @@ int sleep(int);
 int uptime(void);
 int histry(stringData*);
 int ttop(struct top*);
+int chp(struct child_processes*);
 
 // ulib.c
 int stat(const char*, struct stat*);
