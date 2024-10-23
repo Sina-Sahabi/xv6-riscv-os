@@ -806,9 +806,6 @@ fill_chp(struct child_processes *cp) {
   struct proc *mp = myproc();
   for (struct proc *p = proc; p < &proc[NPROC]; p++) {
     acquire(&p->lock);
-    // if (p->state != UNUSED) { //!
-    //   printf("%s\t%d\t%d\n", p->name, p->pid, (p->parent != 0 ? p->parent->pid : -1));
-    // }
     if (p->state != UNUSED && checkAnc(p, mp)) {
       acquire(&wait_lock);
       cp->processes[cp->count].ppid = p->parent->pid;
