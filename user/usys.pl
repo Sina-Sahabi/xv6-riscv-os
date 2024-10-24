@@ -39,3 +39,4 @@ entry("uptime");
 entry("histry");
 entry("ttop");
 entry("chp");
+entry("rptrap");

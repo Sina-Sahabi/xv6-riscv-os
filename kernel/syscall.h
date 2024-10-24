@@ -23,3 +23,4 @@
 #define SYS_histry 22
 #define SYS_ttop   23
 #define SYS_chp    24
+#define SYS_rptrap 25

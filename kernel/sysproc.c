@@ -152,3 +152,21 @@ sys_chp(void)
   
   return e;
 }
+
+// return childern processes' traps
+uint64
+sys_rptrap(void)
+{
+  struct report_traps *rt;
+  struct report_traps krt;
+
+  argaddr(0, (uint64 *)&rt);
+
+  int e = reportraps(&krt);
+
+  struct proc *p = myproc();
+  if(copyout(p->pagetable, (uint64)rt, (char*)&krt, sizeof(krt)) < 0)
+    return -1;
+  
+  return e;
+}

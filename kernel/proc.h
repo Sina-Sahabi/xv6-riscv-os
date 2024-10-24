@@ -134,3 +134,16 @@ struct child_processes {
   int count;
   struct proc_info processes [NPROC];
 };
+
+struct report {
+  char name [16];
+  int pid;
+  uint64 scause;
+  uint64 sepc;
+  uint64 stval;
+};
+
+struct report_traps {
+  int count;
+  struct report reports [MAXREPORT];
+};

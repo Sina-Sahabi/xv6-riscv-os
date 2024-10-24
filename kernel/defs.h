@@ -11,6 +11,8 @@ struct superblock;
 struct proc_info;
 struct top;
 struct child_processes;
+struct report;
+struct report_traps;
 
 // bio.c
 void            binit(void);
@@ -114,8 +116,9 @@ void            yield(void);
 int             either_copyout(int user_dst, uint64 dst, void *src, uint64 len);
 int             either_copyin(void *dst, int user_src, uint64 src, uint64 len);
 void            procdump(void);
-void            fill_top(struct top *t);
-int             fill_chp(struct child_processes *cp);
+void            fill_top(struct top*);
+int             fill_chp(struct child_processes*);
+int             reportraps(struct report_traps*);
 
 // swtch.S
 void            swtch(struct context*, struct context*);
@@ -158,6 +161,7 @@ void            trapinit(void);
 void            trapinithart(void);
 extern struct spinlock tickslock;
 void            usertrapret(void);
+int             fill_traps(struct report_traps*, int);
 
 // uart.c
 void            uartinit(void);

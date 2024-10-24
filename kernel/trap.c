@@ -7,7 +7,26 @@
 #include "defs.h"
 
 struct spinlock tickslock;
+struct spinlock trapslock;
 uint ticks;
+
+struct {
+  struct report reports [MAXREPORT];
+  int numberOfReports;
+  int writeIndex;
+} _internal_report_list;
+
+void add_trap (int pid, char name [16], uint64 scause, uint64 sepc, uint64 stval) {
+  acquire(&trapslock);
+  _internal_report_list.numberOfReports++;
+  _internal_report_list.reports[_internal_report_list.writeIndex].pid = pid;
+  strncpy(_internal_report_list.reports[_internal_report_list.writeIndex].name, name, 16);
+  _internal_report_list.reports[_internal_report_list.writeIndex].scause = scause;
+  _internal_report_list.reports[_internal_report_list.writeIndex].sepc = sepc;
+  _internal_report_list.reports[_internal_report_list.writeIndex].stval = stval;
+  _internal_report_list.writeIndex = (_internal_report_list.writeIndex + 1) % MAXREPORT;
+  release(&trapslock);
+}
 
 extern char trampoline[], uservec[], userret[];
 
@@ -22,6 +41,7 @@ void
 trapinit(void)
 {
   initlock(&tickslock, "time");
+  initlock(&trapslock, "trap");
 }
 
 // set up to take exceptions and traps while in the kernel.
@@ -94,6 +114,7 @@ usertrap(void)
   } else {
     printf("usertrap(): unexpected scause %p pid=%d\n", r_scause(), p->pid);
     printf("            sepc=%p stval=%p\n", r_sepc(), r_stval());
+    add_trap(p->pid, p->name, r_scause(), r_sepc(), r_stval());
     setkilled(p);
   }
 
@@ -256,3 +277,17 @@ devintr()
   }
 }
 
+int
+fill_traps(struct report_traps *rt, int pid) {
+  acquire(&trapslock);
+  for (int i = 0; i < MAXREPORT; i++) if (_internal_report_list.reports[i].pid == pid) {
+    rt->reports[rt->count].pid = _internal_report_list.reports[i].pid;
+    rt->reports[rt->count].scause = _internal_report_list.reports[i].scause;
+    rt->reports[rt->count].sepc = _internal_report_list.reports[i].sepc;
+    rt->reports[rt->count].stval = _internal_report_list.reports[i].stval;
+    strncpy(rt->reports[rt->count].name, _internal_report_list.reports[i].name, 16);
+    rt->count = (rt->count + 1) % MAXREPORT;
+  }
+  release(&trapslock);
+  return 0;
+}

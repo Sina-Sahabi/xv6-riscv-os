@@ -169,9 +169,9 @@ freeproc(struct proc *p)
     proc_freepagetable(p->pagetable, p->sz);
   p->pagetable = 0;
   p->sz = 0;
-  p->pid = 0;
-  p->parent = 0;
-  p->name[0] = 0;
+  // p->pid = 0;
+  // p->parent = 0;
+  // p->name[0] = 0;
   p->chan = 0;
   p->killed = 0;
   p->xstate = 0;
@@ -806,7 +806,7 @@ fill_chp(struct child_processes *cp) {
   struct proc *mp = myproc();
   for (struct proc *p = proc; p < &proc[NPROC]; p++) {
     acquire(&p->lock);
-    if (p->state != UNUSED && checkAnc(p, mp)) {
+    if (checkAnc(p, mp)) {
       acquire(&wait_lock);
       cp->processes[cp->count].ppid = p->parent->pid;
       release(&wait_lock);
@@ -818,6 +818,18 @@ fill_chp(struct child_processes *cp) {
       cp->count++;
     }
     release(&p->lock);
+  }
+  return 0;
+}
+
+int
+reportraps(struct report_traps *rt) {
+  rt->count = 0;
+  fill_traps(rt, myproc()->pid);
+  struct child_processes cp;
+  fill_chp(&cp);
+  for (int i = 0; i < cp.count; i++) {
+    fill_traps(rt, cp.processes[i].pid);
   }
   return 0;
 }

@@ -104,6 +104,7 @@ extern uint64 sys_close(void);
 extern uint64 sys_histry(void);
 extern uint64 sys_ttop(void);
 extern uint64 sys_chp(void);
+extern uint64 sys_rptrap(void);
 
 // An array mapping syscall numbers from syscall.h
 // to the function that handles the system call.
@@ -132,6 +133,7 @@ static uint64 (*syscalls[])(void) = {
 [SYS_histry]  sys_histry,
 [SYS_ttop]    sys_ttop,
 [SYS_chp]     sys_chp,
+[SYS_rptrap]  sys_rptrap,
 };
 
 void
