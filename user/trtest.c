@@ -11,6 +11,8 @@ int main()
 {
   if (fork() == 0) {
     int *ptr = (int*)-1;
+    fork();
+    sleep(5);
     printf("%d\n", *ptr);
     exit(0);
   }

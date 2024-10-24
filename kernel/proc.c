@@ -376,7 +376,7 @@ exit(int status)
   acquire(&wait_lock);
 
   // Give any children to init.
-  reparent(p);
+  // reparent(p);
 
   // Parent might be sleeping in wait().
   wakeup(p->parent);
